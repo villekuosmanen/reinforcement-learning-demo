@@ -33,7 +33,7 @@ optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 
 # Load pre-trained model
 print("loading model car...")
-model_car = Car(device, policy_net, target_net, optimizer).from_file("good.pth")
+model_car = Car(device, policy_net, target_net, optimizer).from_file("updated.pth")
 print("model car loaded.")
 
 # Run the simulation with a given policy

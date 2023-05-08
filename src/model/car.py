@@ -19,14 +19,37 @@ TAU = 0.005
 
 class Car():
     
-    def __init__(self, device, policy_net, target_net, optimizer, memory):
+    def __init__(self, device, policy_net, target_net, optimizer):
         self.device = device
         self.policy_net = policy_net
         self.target_net = target_net
         self.optimizer = optimizer
-        self.memory = memory
 
+    def from_file(self, filename):
+        state = torch.load(filename)
+
+        self.policy_net.load_state_dict(state['policy_net'])
+        self.target_net.load_state_dict(state['target_net'])
+        self.optimizer.load_state_dict(state['optimizer'])
+        self.steps_done = state['steps_done']
+        
+        return self 
+
+
+    def from_fresh_instance(self, memory):
+        self.memory = memory
         self.steps_done = 0
+
+        return self
+
+    def save(self, filename):
+        state = {
+            'policy_net': self.policy_net.state_dict(),
+            'target_net': self.target_net.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'steps_done': self.steps_done
+        }
+        torch.save(state, filename)
 
     def select_action(self, state, env):
         sample = random.random()

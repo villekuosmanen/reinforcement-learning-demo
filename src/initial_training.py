@@ -1,4 +1,5 @@
 from itertools import count
+import random
 
 import gymnasium as gym
 import matplotlib
@@ -10,8 +11,6 @@ from model.car import Car
 from dqn.model import DQN
 from dqn.utils import ReplayMemory
 
-# constants
-NUM_STEPS = 1500
 LR = 1e-4
 
 # Initialise pytorch
@@ -45,7 +44,7 @@ optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 memory = ReplayMemory(100000)
 
 # Initialise model class
-model_car = Car(device, policy_net, target_net, optimizer, memory)
+model_car = Car(device, policy_net, target_net, optimizer).from_fresh_instance(memory)
 
 episode_durations = []
 
@@ -79,13 +78,9 @@ num_episodes = 1000
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
-
-    # for last few episodes, show in human format
-    # if i_episode > 90:
-    #     env = gym.make('MountainCar-v0', render_mode="human")
-
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+    
     for t in count():
         action = model_car.select_action(state, env)
         observation, reward, terminated, truncated, _ = env.step(action.item())
@@ -98,7 +93,7 @@ for i_episode in range(num_episodes):
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
         # Store the transition in memory
-        memory.push(state, action, next_state, reward)
+        model_car.memory.push(state, action, next_state, reward)
 
         # Move to the next state
         state = next_state
@@ -119,33 +114,5 @@ plot_durations(show_result=True)
 plt.ioff()
 plt.show()
 
-# -------------------------------------------------
-# Run the simulation with a given policy
-env = gym.make('MountainCar-v0', render_mode="human")
-state, info = env.reset()
-state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-for step in range(NUM_STEPS):
-    # apply the action
-    action = model_car.select_action(state, env)
-    observation, reward, terminated, truncated, _ = env.step(action.item())
-    reward = torch.tensor([reward], device=device)
-    done = terminated or truncated
-
-    if terminated:
-            next_state = None
-    else:
-        next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
-
-    # Store the transition in memory
-    memory.push(state, action, next_state, reward)
-
-    # Move to the next state
-    state = next_state
-    
-    # If the epsiode is up, then start another one
-    if done or truncated:
-        env.reset()
-        break
-
-# Close the env
-env.close()
+# persist trained model
+model_car.save("pre-trained.pth")

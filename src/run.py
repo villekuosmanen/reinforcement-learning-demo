@@ -34,13 +34,15 @@ optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 
 # Load pre-trained model
 print("loading model car...")
-model_car = Car(device, policy_net, target_net, optimizer).from_file("jitter.pth")
+model_car = Car(device, policy_net, target_net, optimizer).from_file("lag.pth")
 print("model car loaded.")
 
 # Run the simulation with a given policy
 state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+# state_lag = state
+
 for t in count():
-    # state = apply_jitter(state)
+    state = apply_jitter(state)
 
     # apply the action
     action = model_car.select_action(state, env)
@@ -55,6 +57,9 @@ for t in count():
 
     # Move to the next state
     state = next_state
+    # Move state lag
+    # state = state_lag
+    # state_lag = next_state
     
     # If the epsiode is up, then start another one
     if done or truncated:

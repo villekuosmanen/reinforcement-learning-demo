@@ -76,15 +76,20 @@ def plot_durations(show_result=False):
             display.display(plt.gcf())
 
 num_episodes = 1000
+state_lag = None
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
+    # intialise state_lag
+    if state_lag is None:
+        state_lag = state
+    
     for t in count():
-        state = apply_jitter(state)
-        
+        # state = apply_jitter(state)
+
         action = model_car.select_action(state, env)
         observation, reward, terminated, truncated, _ = env.step(action.item())
         reward = torch.tensor([reward], device=device)
@@ -99,7 +104,10 @@ for i_episode in range(num_episodes):
         model_car.memory.push(state, action, next_state, reward)
 
         # Move to the next state
-        state = next_state
+        # state = next_state
+        # Move state lag
+        state = state_lag
+        state_lag = next_state
 
         # Perform one step of the optimization (on the policy network)
         model_car.optimize_model()

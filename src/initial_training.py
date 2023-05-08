@@ -10,6 +10,7 @@ import torch.optim as optim
 from model.car import Car
 from dqn.model import DQN
 from dqn.utils import ReplayMemory
+from model.jitter import apply_jitter
 
 LR = 1e-4
 
@@ -80,8 +81,10 @@ for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
     state, info = env.reset()
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-    
+
     for t in count():
+        state = apply_jitter(state)
+        
         action = model_car.select_action(state, env)
         observation, reward, terminated, truncated, _ = env.step(action.item())
         reward = torch.tensor([reward], device=device)

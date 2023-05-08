@@ -6,6 +6,7 @@ import torch.optim as optim
 
 from dqn.model import DQN
 from model.car import Car
+from model.jitter import apply_jitter
 
 # TODO this should not be needed
 LR = 1e-4
@@ -33,12 +34,14 @@ optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 
 # Load pre-trained model
 print("loading model car...")
-model_car = Car(device, policy_net, target_net, optimizer).from_file("updated.pth")
+model_car = Car(device, policy_net, target_net, optimizer).from_file("jitter.pth")
 print("model car loaded.")
 
 # Run the simulation with a given policy
 state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 for t in count():
+    # state = apply_jitter(state)
+
     # apply the action
     action = model_car.select_action(state, env)
     observation, reward, terminated, truncated, _ = env.step(action.item())
